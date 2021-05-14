@@ -11,7 +11,8 @@ set(CMAKE_DEBUG_MESSAGES "TBD" ON)
 
 option(COMPILE_SERIALIZER_AVRO_C "Option to enable Avro data serialization system" ON)
 option(COMPILE_SERIALIZER_AVRO_CPP "Option to enable Avro data serialization system for CPP interface" ON)
-option(COMPILE_CPP_INTERFACE "Option to enable CPP interface for serdes" ON)
+option(COMPILE_CPP_INTERFACE "Option to enable CPP interface for serdes" OFF)
+option(COMPILE_EXAMPLES "Option to build example" ON)
 
 find_package(Boost REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -22,4 +23,8 @@ add_subdirectory(src)
 
 if(${COMPILE_CPP_INTERFACE})
     add_subdirectory(src-cpp)
+endif()
+
+if(${COMPILE_EXAMPLES})
+    add_subdirectory(examples)
 endif()

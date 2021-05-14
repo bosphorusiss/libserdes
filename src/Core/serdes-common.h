@@ -40,6 +40,12 @@ typedef enum {
 
 
 #ifdef _MSC_VER
+
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+typedef SSIZE_T ssize_t;
+#endif
+
 /* MSVC Win32 DLL symbol exports */
 #undef SERDES_EXPORT
 #ifdef SERDES_DLL_EXPORTS /* Set when building DLL */
@@ -51,4 +57,3 @@ typedef enum {
 #else
 #define SERDES_EXPORT
 #endif
-

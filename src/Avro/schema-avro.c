@@ -15,6 +15,7 @@
  */
 
 #include "serdes_int.h"
+#include "serdes-avro.h"
 
 
 void *serdes_avro_schema_load_cb (serdes_schema_t *ss,

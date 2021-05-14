@@ -26,7 +26,7 @@
 #include <librdkafka/rdkafka.h>
 
 /* Typical include path is <libserdes/serdes.h> */
-#include "../src/serdes-avro.h"
+#include "../src/Avro/serdes-avro.h"
 
 static int run = 1;
 static int exit_eof = 0;
@@ -132,6 +132,7 @@ static void run_producer (rd_kafka_conf_t *rk_conf,
                           rd_kafka_topic_conf_t *rkt_conf,
                           const char *topic, int32_t partition,
                           const char *schema_name, int schema_id,
+                          const char *schema_type,
                           const char *schema_def,
                           serdes_t *serdes) {
         rd_kafka_t *rk;
@@ -142,7 +143,7 @@ static void run_producer (rd_kafka_conf_t *rk_conf,
 
         if (schema_def) {
                 schema = serdes_schema_add(serdes,
-                                           schema_name, schema_id,
+                                           schema_name, schema_id, schema_type,
                                            schema_def, -1,
                                            errstr, sizeof(errstr));
                 if (!schema)
@@ -188,7 +189,7 @@ static void run_producer (rd_kafka_conf_t *rk_conf,
                 if (!strncmp(buf, "schema: ", 8)) {
                         /* New schema definition */
                         schema = serdes_schema_add(serdes,
-                                                   schema_name, -1,
+                                                   schema_name, -1, schema_type,
                                                    buf+8, -1,
                                                    errstr, sizeof(errstr));
                         if (!schema) {
@@ -318,6 +319,7 @@ int main (int argc, char **argv) {
         int schema_id = -1;
         const char *schema_name = NULL;
         const char *schema_def = NULL;
+        const char *schema_type = "AVRO";
 
         signal(SIGINT, sig_term);
         signal(SIGTERM, sig_term);
@@ -449,7 +451,7 @@ int main (int argc, char **argv) {
                 run_consumer(rk_conf, rkt_conf, topic, partition, serdes);
         else if (mode == 'P') /* Producer */
                 run_producer(rk_conf, rkt_conf, topic, partition,
-                             schema_name, schema_id, schema_def, serdes);
+                             schema_name, schema_id, schema_type, schema_def, serdes);
         else if (mode == 'Q') { /* Schema registry query */
                 serdes_schema_t *schema;
 

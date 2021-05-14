@@ -29,87 +29,95 @@
 #include <avro/Decoder.hh>
 
 /* Typical include path is <libserdes/serdescpp.h> */
-#include "../src-cpp/serdescpp.h"
+#include "../src-cpp/Core/serdescpp.h"
 
 static int run = 1;
 static int verbosity = 2;
 
-#define FATAL(reason...) do {                           \
-    std::cerr << "FATAL: " << reason << std::endl;      \
-    exit(1);                                            \
+#define FATAL(reason...)                           \
+  do                                               \
+  {                                                \
+    std::cerr << "FATAL: " << reason << std::endl; \
+    exit(1);                                       \
   } while (0)
 
-
-
-class ExampleLogCb : public Serdes::LogCb {
- public:
-  void log_cb (Serdes::Handle *serdes, int level, const std::string &fac,
-               const std::string &buf) {
+class ExampleLogCb : public Serdes::LogCb
+{
+public:
+  void log_cb(Serdes::Handle *serdes, int level, const std::string &fac,
+              const std::string &buf)
+  {
     std::cout << "% SERDES-" << level << "-" << fac << ": " << buf << std::endl;
   }
 };
 
-
-static void usage (const std::string &me) {
+static void usage(const std::string &me)
+{
   std::cerr << "Usage: " << me << " <options>\n"
-      "\n"
-      "Options:\n"
-      " -r <schreg-urls>  Schema registry URL\n"
-      " -s <schema-name>  Schema/subject name\n"
-      " -S <schema-def>   Schema definition (JSON)\n"
-      " -j <json blob>    JSON blob to encode or decode\n"
-      " -X <n>=<v>        Set Serdes configuration\n"
-      " -v                Increase verbosity\n"
-      " -q                Decrease verbosity\n"
-      "\n"
-      "Examples:\n"
-      "  Retrieve schema definition by name:\n"
-      "   " << me << " -s the_schema_name\n"
-      "  Retrieve schema definition by id:\n"
-      "   " << me << " -s 1234\n"
-      "\n"
-      "  Define new schema:\n"
-      "   " << me << " -s the_schema_name -S \"$(cat my_def.json)\"\n"
-      "\n" << std::endl;
+                                  "\n"
+                                  "Options:\n"
+                                  " -r <schreg-urls>  Schema registry URL\n"
+                                  " -s <schema-name>  Schema/subject name\n"
+                                  " -S <schema-def>   Schema definition (JSON)\n"
+                                  " -j <json blob>    JSON blob to encode or decode\n"
+                                  " -X <n>=<v>        Set Serdes configuration\n"
+                                  " -v                Increase verbosity\n"
+                                  " -q                Decrease verbosity\n"
+                                  "\n"
+                                  "Examples:\n"
+                                  "  Retrieve schema definition by name:\n"
+                                  "   "
+            << me << " -s the_schema_name\n"
+                     "  Retrieve schema definition by id:\n"
+                     "   "
+            << me << " -s 1234\n"
+                     "\n"
+                     "  Define new schema:\n"
+                     "   "
+            << me << " -s the_schema_name -S \"$(cat my_def.json)\"\n"
+                     "\n"
+            << std::endl;
   exit(1);
 }
-
 
 /**
  * Read JSON from stdin, using the provided schema.
  */
-static void decode_json (Serdes::Schema *schema, const std::string &json_str) {
+static void decode_json(Serdes::Schema *schema, const std::string &json_str)
+{
 
   avro::DecoderPtr decoder;
 
-  decoder = avro::jsonDecoder(*static_cast<avro::ValidSchema*>(schema->object()));
+  decoder = avro::jsonDecoder(*static_cast<avro::ValidSchema *>(schema->object()));
 
-  std::auto_ptr<avro::InputStream> istream =
+  auto istream =
       avro::memoryInputStream((const uint8_t *)json_str.c_str(), json_str.size());
 
   decoder->init(*istream);
-  try {
+  try
+  {
     std::string s = decoder->decodeString();
     std::cout << "Read: " << s << std::endl;
-  } catch (const avro::Exception &e) {
+  }
+  catch (const avro::Exception &e)
+  {
     FATAL("Decode failed: " << e.what());
   }
 }
 
-
-static void sig_term (int sig) {
+static void sig_term(int sig)
+{
   run = 0;
 }
 
-
-int main (int argc, char **argv) {
+int main(int argc, char **argv)
+{
   serdes_err_t err;
   int opt;
   int schema_id = -1;
-  std::string schema_name, schema_def, json_blob;
+  std::string schema_name, schema_type{"AVRO"}, schema_def, json_blob;
   std::string errstr;
   Serdes::Schema *schema;
-
 
   /* Controlled termination */
   struct sigaction sa;
@@ -117,7 +125,6 @@ int main (int argc, char **argv) {
   sa.sa_handler = sig_term;
   sigaction(SIGINT, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
-
 
   /* Create serdes configuration object.
    * Configuration passed through -X prop=val will be set on this object,
@@ -132,54 +139,55 @@ int main (int argc, char **argv) {
   ExampleLogCb LogCb;
   sconf->set(&LogCb);
 
-  while ((opt = getopt(argc, argv, "r:s:S:j:X:vq")) != -1) {
+  while ((opt = getopt(argc, argv, "r:s:S:j:X:vq")) != -1)
+  {
     switch (opt)
     {
-      case 'r':
-        if (sconf->set("schema.registry.url", optarg, errstr) != SERDES_ERR_OK)
-          FATAL("Failed to set registry.url: " << errstr);
+    case 'r':
+      if (sconf->set("schema.registry.url", optarg, errstr) != SERDES_ERR_OK)
+        FATAL("Failed to set registry.url: " << errstr);
+      break;
+
+    case 's':
+      schema_name = optarg;
+      break;
+
+    case 'S':
+      schema_def = optarg;
+      break;
+
+    case 'j':
+      json_blob = optarg;
+      break;
+
+    case 'X':
+    {
+      char *t = strchr(optarg, '=');
+      if (!t)
+        FATAL("Expected -X property=value");
+      *t = '\0';
+
+      std::string name = optarg;
+      std::string val = t + 1;
+
+      err = sconf->set(name, val, errstr);
+      if (err == SERDES_ERR_OK)
         break;
 
-      case 's':
-        schema_name = optarg;
-        break;
+      FATAL(errstr);
+    }
+    break;
 
-      case 'S':
-        schema_def = optarg;
-        break;
+    case 'v':
+      verbosity++;
+      break;
+    case 'q':
+      verbosity--;
+      break;
 
-      case 'j':
-        json_blob = optarg;
-        break;
-
-      case 'X':
-        {
-          char *t = strchr(optarg, '=');
-          if (!t)
-            FATAL("Expected -X property=value");
-          *t = '\0';
-
-          std::string name = optarg;
-          std::string val  = t+1;
-
-          err = sconf->set(name, val, errstr);
-          if (err == SERDES_ERR_OK)
-            break;
-
-          FATAL(errstr);
-        }
-        break;
-
-      case 'v':
-        verbosity++;
-        break;
-      case 'q':
-        verbosity--;
-        break;
-
-      default:
-        std::cerr << "%% Unknown option -" << (char)opt << std::endl;
-        usage(argv[0]);
+    default:
+      std::cerr << "%% Unknown option -" << (char)opt << std::endl;
+      usage(argv[0]);
     }
   }
 
@@ -194,13 +202,14 @@ int main (int argc, char **argv) {
 
   /* If schema name is an integer treat it as schema id. */
   if (!schema_name.empty() &&
-      schema_name.find_first_not_of("0123456789") == std::string::npos) {
+      schema_name.find_first_not_of("0123456789") == std::string::npos)
+  {
     schema_id = atoi(schema_name.c_str());
     schema_name.clear();
   }
 
-
-  if (schema_def.empty()) {
+  if (schema_def.empty())
+  {
     /* Query schema registry */
 
     std::cout << "Query schema: by name \"" << schema_name << "\" or id "
@@ -216,21 +225,19 @@ int main (int argc, char **argv) {
     if (!schema)
       FATAL("Failed to get schema: " << errstr);
 
-    std::cout << "Schema \"" << schema->name() << "\" id " << schema->id() <<
-        ": " << schema->definition() << std::endl;
-
+    std::cout << "Schema \"" << schema->name() << "\" id " << schema->id() << ": " << schema->definition() << std::endl;
 
     if (!json_blob.empty())
       decode_json(schema, json_blob);
-
-
-  } else {
+  }
+  else
+  {
     /* Register new schema */
 
     std::cout << "Register new schema: " << schema_name << ": "
               << schema_def << std::endl;
 
-    schema = Serdes::Schema::add(serdes, schema_name,
+    schema = Serdes::Schema::add(serdes, schema_name, schema_type,
                                  schema_def, errstr);
 
     if (!schema)
@@ -238,7 +245,6 @@ int main (int argc, char **argv) {
 
     std::cout << "Registered schema " << schema->name() << " with id "
               << schema->id() << std::endl;
-
   }
 
   if (schema)
@@ -247,5 +253,4 @@ int main (int argc, char **argv) {
   delete serdes;
 
   return 0;
-
 }

@@ -20,27 +20,30 @@
 #include <avro/ValidSchema.hh>
 
 #include "serdescpp.h"
+#include "serdescpp_int.h"
 
-namespace Serdes {
+namespace Serdes
+{
 
-class SERDES_EXPORT Avro : public virtual Handle {
-public:
-  virtual ~Avro () = 0;
+  class SERDES_EXPORT Avro : public virtual Handle
+  {
+  public:
+    virtual ~Avro() = 0;
 
-  /**
+    /**
    * Create Avro serializer/deserializer
    */
-  static Avro *create (const Conf *conf, std::string &errstr);
+    static Avro *create(const Conf *conf, std::string &errstr);
 
-  /**
+    /**
    * Serialize the generic Avro datum to output vector 'out'.
    * Returns the number of bytes written to 'out' or -1 on error (in which
    * case errstr is set).
    */
-  virtual ssize_t serialize (Schema *schema, const avro::GenericDatum *datum,
-                             std::vector<char> &out, std::string &errstr) = 0;
+    virtual ssize_t serialize(Schema *schema, const avro::GenericDatum *datum,
+                              std::vector<char> &out, std::string &errstr) = 0;
 
-  /**
+    /**
    * Deserialize binary buffer `payload` of size `size` to generic Avro datum.
    * If '*schemap' is NULL the payload is expected to have the same framing
    * as configured `deserializer.framing` and the deserializer will use
@@ -53,9 +56,37 @@ public:
    * Returns the number of bytes read from `payload` on success, else
    * returns -1 and sets `errstr` accordingly.
    */
-  virtual ssize_t deserialize (Schema **schemap, avro::GenericDatum **datump,
-                               const void *payload, size_t size,
-                               std::string &errstr) = 0;
-};
+    virtual ssize_t deserialize(Schema **schemap, avro::GenericDatum **datump,
+                                const void *payload, size_t size,
+                                std::string &errstr) = 0;
+  };
 
+  class AvroImpl : virtual public Avro, virtual public HandleImpl
+  {
+  public:
+    ~AvroImpl() {}
+
+    static Avro *create(const Conf *conf, std::string &errstr);
+
+    ssize_t serialize(Schema *schema, const avro::GenericDatum *datum,
+                      std::vector<char> &out, std::string &errstr);
+
+    ssize_t deserialize(Schema **schemap, avro::GenericDatum **datump,
+                        const void *payload, size_t size, std::string &errstr);
+
+    ssize_t serializer_framing_size() const
+    {
+      return dynamic_cast<const HandleImpl *>(this)->serializer_framing_size();
+    }
+
+    ssize_t deserializer_framing_size() const
+    {
+      return dynamic_cast<const HandleImpl *>(this)->deserializer_framing_size();
+    }
+
+    int schemas_purge(int max_age)
+    {
+      return dynamic_cast<HandleImpl *>(this)->schemas_purge(max_age);
+    }
+  };
 }
