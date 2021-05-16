@@ -15,7 +15,6 @@
  */
 #pragma once
 
-
 /**
  *
  * serdes-common.h contains artifacts shared between the C and C++ interface,
@@ -23,25 +22,19 @@
  */
 #include "serdes-common.h"
 
+#include <stdlib.h>
 
 /* Private types, all access through methods */
 typedef struct serdes_s serdes_t;
 typedef struct serdes_schema_s serdes_schema_t;
 typedef struct serdes_conf_s serdes_conf_t;
 
-
-
-
-
 /**
  * Returns the human readable form of a serdes_err_t
  * The returned pointer has infinite life time and must not be freed.
  */
 SERDES_EXPORT
-const char *serdes_err2str (serdes_err_t err);
-
-
-
+const char *serdes_err2str(serdes_err_t err);
 
 /*******************************************************************************
  *
@@ -54,14 +47,13 @@ const char *serdes_err2str (serdes_err_t err);
  * `serdes_conf_copy()`.
  */
 SERDES_EXPORT
-void serdes_conf_destroy (serdes_conf_t *sconf);
+void serdes_conf_destroy(serdes_conf_t *sconf);
 
 /**
  * Returns a copy of `src`.
  */
 SERDES_EXPORT
-serdes_conf_t *serdes_conf_copy (const serdes_conf_t *src);
-
+serdes_conf_t *serdes_conf_copy(const serdes_conf_t *src);
 
 /**
  * Set single configuration property `name` to `value`.
@@ -73,27 +65,23 @@ serdes_conf_t *serdes_conf_copy (const serdes_conf_t *src);
  * On error a human readable error description is written to `errstr`.
  */
 SERDES_EXPORT
-serdes_err_t serdes_conf_set (serdes_conf_t *sconf,
-                              const char *name, const char *val,
-                              char *errstr, int errstr_size);
+serdes_err_t serdes_conf_set(serdes_conf_t *sconf, const char *name,
+                             const char *val, char *errstr, int errstr_size);
 
 /**
  * Set optional log callback to use for serdes originated log messages.
  */
 SERDES_EXPORT
-void serdes_conf_set_log_cb (serdes_conf_t *sconf,
-                             void (*log_cb) (serdes_t *sd,
-                                             int level, const char *fac,
-                                             const char *buf, void *opaque));
-
-
+void serdes_conf_set_log_cb(serdes_conf_t *sconf,
+                            void (*log_cb)(serdes_t *sd, int level,
+                                           const char *fac, const char *buf,
+                                           void *opaque));
 
 /**
  *  Set optional opaque pointer passed to callbacks.
  */
 SERDES_EXPORT
-void serdes_conf_set_opaque (serdes_conf_t *sconf, void *opaque);
-
+void serdes_conf_set_opaque(serdes_conf_t *sconf, void *opaque);
 
 /**
  * Creates a new configuration object with default settings.
@@ -109,11 +97,7 @@ void serdes_conf_set_opaque (serdes_conf_t *sconf, void *opaque);
  * then call function as `serdes_conf_new(NULL, 0, NULL)`.
  */
 SERDES_EXPORT
-serdes_conf_t *serdes_conf_new (char *errstr, int errstr_size, ...);
-
-
-
-
+serdes_conf_t *serdes_conf_new(char *errstr, int errstr_size, ...);
 
 /*******************************************************************************
  *
@@ -125,8 +109,7 @@ serdes_conf_t *serdes_conf_new (char *errstr, int errstr_size, ...);
  * Remove schema from local cache and free memory.
  */
 SERDES_EXPORT
-void serdes_schema_destroy (serdes_schema_t *ss);
-
+void serdes_schema_destroy(serdes_schema_t *ss);
 
 /**
  * Get and load schema from local cache or remote schema registry.
@@ -140,9 +123,8 @@ void serdes_schema_destroy (serdes_schema_t *ss);
  * description is written to `errstr` of size `errstr_size`.
  */
 SERDES_EXPORT
-serdes_schema_t *serdes_schema_get (serdes_t *sd, const char *name, int id,
-                                    char *errstr, int errstr_size);
-
+serdes_schema_t *serdes_schema_get(serdes_t *sd, const char *name, int id,
+                                   char *errstr, int errstr_size);
 
 /**
  * Add schema definition to the local cache and stores the schema to remote
@@ -161,19 +143,16 @@ serdes_schema_t *serdes_schema_get (serdes_t *sd, const char *name, int id,
  * readable error description is written to `errstr`
  */
 SERDES_EXPORT
-serdes_schema_t *serdes_schema_add (serdes_t *sd, const char *name, int id,
-                                    const char *type,
-                                    const void *definition, int definition_len,
-                                    char *errstr, int errstr_size);
-
-
+serdes_schema_t *serdes_schema_add(serdes_t *sd, const char *name, int id,
+                                   const char *type, const void *definition,
+                                   int definition_len, char *errstr,
+                                   int errstr_size);
 
 /**
  * Returns the schema id.
  */
 SERDES_EXPORT
-int serdes_schema_id (serdes_schema_t *schema);
-
+int serdes_schema_id(serdes_schema_t *schema);
 
 /**
  * Returns the schema name.
@@ -181,61 +160,55 @@ int serdes_schema_id (serdes_schema_t *schema);
  * NULL is returned if the name of the schema is not known.
  */
 SERDES_EXPORT
-const char *serdes_schema_name (serdes_schema_t *schema);
+const char *serdes_schema_name(serdes_schema_t *schema);
 
 /**
  * @returns the schema type ("AVRO", "PROTOBUF", "JSON", ..).
  */
 SERDES_EXPORT
-const char *serdes_schema_type (serdes_schema_t *schema);
+const char *serdes_schema_type(serdes_schema_t *schema);
 
 /**
  * Returns the schema definition.
  * The returned pointer is only valid until the schema is destroyed.
  */
 SERDES_EXPORT
-const char *serdes_schema_definition (serdes_schema_t *schema);
-
+const char *serdes_schema_definition(serdes_schema_t *schema);
 
 /**
-* @brief Convenience function for association an arbitrary schema object,
+ * @brief Convenience function for association an arbitrary schema object,
  *        such as the Avro schema object, with a serdes schema.
  *        This object is not used by libserdes.
  *        Use serdes_schema_object() to retrieve the pointer.
  *        Clear the reference by setting NULL.
  */
 SERDES_EXPORT
-void serdes_schema_set_object (serdes_schema_t *schema, void *schema_object);
-
+void serdes_schema_set_object(serdes_schema_t *schema, void *schema_object);
 
 /**
  * @returns the schema object as set by serdes_schema_object_set(), or NULL
  *          if not set.
  */
 SERDES_EXPORT
-void *serdes_schema_object (serdes_schema_t *schema);
-
+void *serdes_schema_object(serdes_schema_t *schema);
 
 /**
  * Returns the serdes_t handle for a schema.
  */
 SERDES_EXPORT
-serdes_t *serdes_schema_handle (serdes_schema_t *schema);
-
+serdes_t *serdes_schema_handle(serdes_schema_t *schema);
 
 /**
  * Sets the schema opaque value
  */
 SERDES_EXPORT
-void serdes_schema_set_opaque (serdes_schema_t *schema, void *opaque);
+void serdes_schema_set_opaque(serdes_schema_t *schema, void *opaque);
 
 /**
  * Returns the schema opaque as set by serdes_schema_set_opaque()
  */
 SERDES_EXPORT
-void *serdes_schema_opaque (serdes_schema_t *schema);
-
-
+void *serdes_schema_opaque(serdes_schema_t *schema);
 
 /**
  * Purges any schemas from the local schema cache that have not been used
@@ -244,9 +217,7 @@ void *serdes_schema_opaque (serdes_schema_t *schema);
  * Returns the number of schemas removed.
  */
 SERDES_EXPORT
-int serdes_schemas_purge (serdes_t *serdes, int max_age);
-
-
+int serdes_schemas_purge(serdes_t *serdes, int max_age);
 
 /*******************************************************************************
  *
@@ -265,39 +236,35 @@ int serdes_schemas_purge (serdes_t *serdes, int max_age);
  * written to `errstr`.
  */
 SERDES_EXPORT
-serdes_t *serdes_new (serdes_conf_t *conf, char *errstr, size_t errstr_size);
-
+serdes_t *serdes_new(serdes_conf_t *conf, char *errstr, size_t errstr_size);
 
 /**
  * Frees up any resources associated with the serdes, including schemas.
  * The serdes is no longer usable after this call.
  */
 SERDES_EXPORT
-void serdes_destroy (serdes_t *serdes);
-
-
-
+void serdes_destroy(serdes_t *serdes);
 
 /**
  * Returns the amount of extra space needed by the configured framing.
  * If no framing is configured 0 is returned.
  */
-size_t serdes_serializer_framing_size (serdes_t *schema);
-size_t serdes_deserializer_framing_size (serdes_t *serdes);
-
+size_t serdes_serializer_framing_size(serdes_t *schema);
+size_t serdes_deserializer_framing_size(serdes_t *serdes);
 
 /**
- * Write serializer framing to `payload` (of size `size`) which must have at least
- * `serdes_serializer_framing_size()` bytes available.
+ * Write serializer framing to `payload` (of size `size`) which must have at
+ * least `serdes_serializer_framing_size()` bytes available.
  *
  * Returns the number of bytes written or -1 if `size` is too small to fit
  * the configured framing.
  */
-size_t serdes_framing_write (serdes_schema_t *schema, char *payload, size_t size);
+size_t serdes_framing_write(serdes_schema_t *schema, char *payload,
+                            size_t size);
 
 /**
- * Read framing from `payload` (of size `size`) and extract the schema identifier
- * and look up and fetch the schema.
+ * Read framing from `payload` (of size `size`) and extract the schema
+ * identifier and look up and fetch the schema.
  *
  * If any of these steps fail -1 will be returned and the reason is written
  * to `errstr`.
@@ -306,6 +273,6 @@ size_t serdes_framing_write (serdes_schema_t *schema, char *payload, size_t size
  * '*payloadp' is updated to point at the first payload byte, while
  * '*sizep' is updated to to exclude the framing size.
  */
-ssize_t serdes_framing_read (serdes_t *sd, const void **payloadp, size_t *sizep,
-                             serdes_schema_t **schemap,
-                             char *errstr, int errstr_size);
+ssize_t serdes_framing_read(serdes_t *sd, const void **payloadp, size_t *sizep,
+                            serdes_schema_t **schemap, char *errstr,
+                            int errstr_size);
