@@ -17,13 +17,13 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
-
+#include <pthread.h>
 #include <curl/curl.h>
 
 #include "rest.h"
-#include "tinycthread.h"
 
-static once_flag rest_global_init_once = ONCE_FLAG_INIT;
+
+static pthread_once_t rest_global_init_once = PTHREAD_ONCE_INIT;
 
 static void unittest_url_encode (void);
 
@@ -42,7 +42,7 @@ static void rest_init_cb (void) {
 }
 
 static void rest_init (void) {
-        call_once(&rest_global_init_once, rest_init_cb);
+        pthread_once(&rest_global_init_once, rest_init_cb);
 }
 
 

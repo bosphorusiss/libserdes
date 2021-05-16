@@ -21,9 +21,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <sys/queue.h>
+#include <pthread.h>
 
-#include "../../config.h"
-#include "tinycthread.h"
+
+
 #include "serdes.h"
 #include "rest.h"
 
@@ -78,7 +79,7 @@ struct serdes_conf_s {
  * Main serdes handle
  */
 struct serdes_s {
-        mtx_t          sd_lock;                  /* Protects sd_schemas */
+        pthread_mutex_t sd_lock; /* Protects sd_schemas */
         LIST_HEAD(, serdes_schema_s) sd_schemas; /* Schema cache */
 
         struct serdes_conf_s sd_conf;                  /* Configuration */
@@ -104,7 +105,7 @@ struct serdes_schema_s {
                                               * application */
 
         int           ss_linked;             /* On sd_schemas list */
-        mtx_t         ss_lock;               /* Protects ss_t_last_used */
+        pthread_mutex_t ss_lock;   /* Protects ss_t_last_used */
         serdes_t     *ss_sd;                 /* Back-pointer to serdes_t */
         void         *ss_opaque;             /* Application opaque */
 };

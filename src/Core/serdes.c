@@ -200,7 +200,7 @@ void serdes_destroy (serdes_t *sd) {
 
         serdes_conf_destroy0(&sd->sd_conf);
 
-        mtx_destroy(&sd->sd_lock);
+    pthread_mutex_destroy(&sd->sd_lock);
         free(sd);
 }
 
@@ -209,7 +209,7 @@ serdes_t *serdes_new (serdes_conf_t *conf, char *errstr, size_t errstr_size) {
 
         sd = calloc(1, sizeof(*sd));
         LIST_INIT(&sd->sd_schemas);
-        mtx_init(&sd->sd_lock, mtx_plain);
+    pthread_mutex_init(&sd->sd_lock, 0);
 
         if (conf) {
                 serdes_conf_copy0(&sd->sd_conf, conf);

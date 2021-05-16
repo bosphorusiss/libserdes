@@ -15,7 +15,7 @@
  */
 
 #include <ctype.h>
-
+#include <pthread.h>
 #include <jansson.h>
 
 #include "serdes_int.h"
@@ -27,9 +27,9 @@
  * Update schema's timestamp of last use.
  */
 static __inline void serdes_schema_mark_used (serdes_schema_t *ss) {
-        mtx_lock(&ss->ss_lock);
+        pthread_mutex_lock(&ss->ss_lock);
         ss->ss_t_last_used = time(NULL);
-        mtx_unlock(&ss->ss_lock);
+        pthread_mutex_unlock(&ss->ss_lock);
 }
 
 
@@ -71,7 +71,7 @@ void serdes_schema_destroy0 (serdes_schema_t *ss) {
         if (ss->ss_linked)
                 LIST_REMOVE(ss, ss_link);
 
-        mtx_destroy(&ss->ss_lock);
+        pthread_mutex_destroy(&ss->ss_lock);
         free(ss);
 }
 
@@ -81,9 +81,9 @@ void serdes_schema_destroy0 (serdes_schema_t *ss) {
  */
 void serdes_schema_destroy (serdes_schema_t *ss) {
         serdes_t *sd = ss->ss_sd;
-        mtx_lock(&sd->sd_lock);
+        pthread_mutex_lock(&sd->sd_lock);
         serdes_schema_destroy0(ss);
-        mtx_unlock(&sd->sd_lock);
+        pthread_mutex_unlock(&sd->sd_lock);
 }
 
 
@@ -352,7 +352,7 @@ static serdes_schema_t *serdes_schema_add0 (serdes_t *sd,
 
         assert(ss->ss_type != NULL);
 
-        mtx_init(&ss->ss_lock, mtx_plain);
+        pthread_mutex_init(&ss->ss_lock, 0);
 
         LIST_INSERT_HEAD(&sd->sd_schemas, ss, ss_link);
         ss->ss_linked = 1;
@@ -366,12 +366,12 @@ static serdes_schema_t *serdes_schema_find_by_id (serdes_t *sd, int id,
         serdes_schema_t *ss;
 
         if (do_lock)
-                mtx_lock(&sd->sd_lock);
+                pthread_mutex_lock(&sd->sd_lock);
         LIST_FOREACH(ss, &sd->sd_schemas, ss_link)
                 if (ss->ss_id == id)
                         break;
         if (do_lock)
-                mtx_unlock(&sd->sd_lock);
+                pthread_mutex_unlock(&sd->sd_lock);
 
         return ss;
 }
@@ -384,7 +384,7 @@ serdes_schema_find_by_definition (serdes_t *sd,
         serdes_schema_t *ss;
 
         if (do_lock)
-                mtx_lock(&sd->sd_lock);
+                pthread_mutex_lock(&sd->sd_lock);
         LIST_FOREACH(ss, &sd->sd_schemas, ss_link) {
                 if (ss->ss_definition_len == definition_len &&
                     !strcmp(ss->ss_type, type) &&
@@ -392,7 +392,7 @@ serdes_schema_find_by_definition (serdes_t *sd,
                         break;
         }
         if (do_lock)
-                mtx_unlock(&sd->sd_lock);
+                pthread_mutex_unlock(&sd->sd_lock);
 
         return ss;
 }
@@ -406,7 +406,7 @@ serdes_schema_t *serdes_schema_add (serdes_t *sd, const char *name, int id,
         if (definition && definition_len == -1)
                 definition_len = strlen(definition);
 
-        mtx_lock(&sd->sd_lock);
+        pthread_mutex_lock(&sd->sd_lock);
         if (!(ss = serdes_schema_find_by_definition(sd, definition,
                                                     definition_len,
                                                     type,
@@ -414,7 +414,7 @@ serdes_schema_t *serdes_schema_add (serdes_t *sd, const char *name, int id,
                 ss = serdes_schema_add0(sd, name, id, type,
                                         definition, definition_len,
                                         errstr, errstr_size);
-        mtx_unlock(&sd->sd_lock);
+        pthread_mutex_unlock(&sd->sd_lock);
 
         if (ss)
                 serdes_schema_mark_used(ss);
@@ -425,16 +425,16 @@ serdes_schema_t *serdes_schema_get (serdes_t *sd, const char *name, int id,
                                     char *errstr, int errstr_size) {
         serdes_schema_t *ss;
 
-        mtx_lock(&sd->sd_lock);
+        pthread_mutex_lock(&sd->sd_lock);
         if ((ss = serdes_schema_find_by_id(sd, id, 0/*no-lock*/))) {
-                mtx_unlock(&sd->sd_lock);
+                pthread_mutex_unlock(&sd->sd_lock);
                 serdes_schema_mark_used(ss);
                 return ss;
         }
 
         ss = serdes_schema_add0(sd, name, id, NULL, NULL, 0,
                                 errstr, errstr_size);
-        mtx_unlock(&sd->sd_lock);
+        pthread_mutex_unlock(&sd->sd_lock);
 
         return ss; /* May be NULL */
 }
@@ -475,7 +475,7 @@ int serdes_schemas_purge (serdes_t *serdes, int max_age) {
         time_t expiry = time(NULL) - max_age;
         int cnt = 0;
 
-        mtx_lock(&serdes->sd_lock);
+        pthread_mutex_lock(&serdes->sd_lock);
         next = LIST_FIRST(&serdes->sd_schemas);
         while (next) {
                 ss = next;
@@ -486,7 +486,7 @@ int serdes_schemas_purge (serdes_t *serdes, int max_age) {
                         cnt++;
                 }
         }
-        mtx_unlock(&serdes->sd_lock);
+        pthread_mutex_unlock(&serdes->sd_lock);
 
         return cnt;
 }
