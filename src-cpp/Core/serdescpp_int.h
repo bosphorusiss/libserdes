@@ -26,51 +26,49 @@ extern "C"
 #include "serdes.h"
 };
 
-namespace Serdes
-{
+namespace Serdes {
 
-  class ConfImpl : public Conf
-  {
+class ConfImpl : public Conf
+{
   public:
     ~ConfImpl()
     {
-      if (conf_)
-        serdes_conf_destroy(conf_);
+        if (conf_)
+            serdes_conf_destroy(conf_);
     }
 
     static Conf *create();
 
     ConfImpl() : conf_(NULL), log_cb_(NULL) {}
 
-    ErrorCode set(const std::string &name,
-                  const std::string &value,
+    ErrorCode set(const std::string &name, const std::string &value,
                   std::string &errstr)
     {
-      char c_errstr[256];
-      serdes_err_t err;
-      err = serdes_conf_set(conf_, name.c_str(), value.c_str(),
-                            c_errstr, sizeof(c_errstr));
-      if (err != SERDES_ERR_OK)
-        errstr = c_errstr;
-      return static_cast<ErrorCode>(err);
+        char c_errstr[256];
+        serdes_err_t err;
+        err = serdes_conf_set(conf_, name.c_str(), value.c_str(), c_errstr,
+                              sizeof(c_errstr));
+        if (err != SERDES_ERR_OK)
+            errstr = c_errstr;
+        return static_cast<ErrorCode>(err);
     }
 
     void set(LogCb *log_cb)
     {
-      log_cb_ = log_cb;
+        log_cb_ = log_cb;
     }
 
     serdes_conf_t *conf_;
     LogCb *log_cb_;
-  };
+};
 
-  class HandleImpl : public Handle
-  {
+class HandleImpl : public Handle
+{
   public:
     ~HandleImpl()
     {
-      if (sd_)
-        serdes_destroy(sd_);
+        if (sd_)
+            serdes_destroy(sd_);
     }
 
     static Handle *create(const Conf *conf, std::string &errstr);
@@ -79,96 +77,99 @@ namespace Serdes
 
     int schemas_purge(int max_age)
     {
-      return serdes_schemas_purge(sd_, max_age);
+        return serdes_schemas_purge(sd_, max_age);
     }
 
     ssize_t serializer_framing_size() const
     {
-      return serdes_serializer_framing_size(sd_);
+        return serdes_serializer_framing_size(sd_);
     }
 
     ssize_t deserializer_framing_size() const
     {
-      return serdes_deserializer_framing_size(sd_);
+        return serdes_deserializer_framing_size(sd_);
     }
 
     LogCb *log_cb_;
     serdes_t *sd_;
-  };
+};
 
-  class SchemaImpl : public Schema
-  {
+class SchemaImpl : public Schema
+{
   public:
     ~SchemaImpl()
     {
-      if (schema_)
-      {
-        serdes_schema_set_opaque(schema_, NULL);
-        serdes_schema_destroy(schema_);
-      }
+        if (schema_) {
+            serdes_schema_set_opaque(schema_, NULL);
+            serdes_schema_destroy(schema_);
+        }
     }
 
     SchemaImpl() : schema_(NULL) {}
     SchemaImpl(serdes_schema_t *ss) : schema_(ss) {}
 
     static Schema *get(Handle *handle, int id, std::string &errstr);
-    static Schema *get(Handle *handle, const std::string &name, std::string &errstr);
+    static Schema *get(Handle *handle, const std::string &name,
+                       std::string &errstr);
 
     static Schema *add(Handle *handle, int id, const std::string &definition,
                        std::string &errstr);
-    static Schema *add(Handle *handle, const std::string &name, const std::string &type, const std::string &definition,
+    static Schema *add(Handle *handle, const std::string &name,
+                       const std::string &type, const std::string &definition,
                        std::string &errstr);
-    static Schema *add(Handle *handle, const std::string &name, int id, const std::string &type,
-                       const std::string &definition, std::string &errstr);
+    static Schema *add(Handle *handle, const std::string &name, int id,
+                       const std::string &type, const std::string &definition,
+                       std::string &errstr);
 
     int id()
     {
-      return serdes_schema_id(schema_);
+        return serdes_schema_id(schema_);
     }
 
     const std::string name()
     {
-      const char *name = serdes_schema_name(schema_);
-      return std::string(name ? name : "");
+        const char *name = serdes_schema_name(schema_);
+        return std::string(name ? name : "");
     }
 
     const std::string type()
     {
-      const char *type = serdes_schema_type(schema_);
-      return std::string(type ? type : "");
+        const char *type = serdes_schema_type(schema_);
+        return std::string(type ? type : "");
     }
 
     const std::string definition()
     {
-      const char *def = serdes_schema_definition(schema_);
-      return std::string(def ? def : "");
+        const char *def = serdes_schema_definition(schema_);
+        return std::string(def ? def : "");
     }
 
     void set_object(void *object)
     {
-      serdes_schema_set_object(schema_, object);
+        serdes_schema_set_object(schema_, object);
     }
 
     void *object()
     {
-      return serdes_schema_object(schema_);
+        return serdes_schema_object(schema_);
     }
 
     ssize_t framing_write(std::vector<char> &out) const
     {
-      ssize_t framing_size = serdes_serializer_framing_size(serdes_schema_handle(schema_));
-      if (framing_size == 0)
-        return 0;
+        ssize_t framing_size =
+          serdes_serializer_framing_size(serdes_schema_handle(schema_));
+        if (framing_size == 0)
+            return 0;
 
-      /* Make room for framing */
-      int pos = out.size();
-      out.resize(out.size() + framing_size);
+        /* Make room for framing */
+        int pos = out.size();
+        out.resize(out.size() + framing_size);
 
-      /* Write framing */
-      return serdes_framing_write(schema_, &out[pos], framing_size);
+        /* Write framing */
+        return serdes_framing_write(schema_, &out[pos], framing_size);
     }
 
     serdes_schema_t *schema_;
-  };
+};
 
-}
+}  // namespace Serdes

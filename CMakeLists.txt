@@ -9,10 +9,17 @@ project(${TARGET_NAME}
 
 set(CMAKE_DEBUG_MESSAGES "TBD" ON)
 
-option(COMPILE_SERIALIZER_AVRO_C "Option to enable Avro data serialization system" ON)
-option(COMPILE_SERIALIZER_AVRO_CPP "Option to enable Avro data serialization system for CPP interface" ON)
-option(COMPILE_CPP_INTERFACE "Option to enable CPP interface for serdes" OFF)
-option(COMPILE_EXAMPLES "Option to build example" ON)
+option(COMPILE_SERIALIZER_AVRO_C "Option to enable Avro data serialization system" OFF)
+option(COMPILE_SERIALIZER_AVRO_CPP "Option to enable Avro data serialization system for CPP interface" OFF)
+option(COMPILE_SERIALIZER_PROTOBUF_C "Option to enable Protobuf data serialization system" ON)
+option(COMPILE_SERIALIZER_PROTOBUF_CPP "Option to enable Protobuf data serialization system for CPP interface" ON)
+option(COMPILE_CPP_INTERFACE "Option to enable CPP interface for serdes" ON)
+option(COMPILE_EXAMPLES "Option to build example" OFF)
+option(COMPILE_TESTS "Option to build unit tests" OFF)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Boost REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -27,4 +34,9 @@ endif()
 
 if(${COMPILE_EXAMPLES})
     add_subdirectory(examples)
+endif()
+
+if(${COMPILE_TESTS})
+    enable_testing()
+    add_subdirectory(tests)
 endif()
