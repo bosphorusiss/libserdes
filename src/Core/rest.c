@@ -415,6 +415,7 @@ static rest_response_t *rest_req(url_list_t *ul, rest_cmd_t cmd,
     do_curl_setopt(curl, CURLOPT_USERAGENT, "libserdes");
     do_curl_setopt(curl, CURLOPT_WRITEFUNCTION, rest_curl_write_cb);
     do_curl_setopt(curl, CURLOPT_WRITEDATA, rr);
+    do_curl_setopt(curl, CURLOPT_TIMEOUT, 15);
 
     switch (cmd) {
         case REST_GET:
